@@ -6,29 +6,52 @@
 - Chave da API OpenAI
 - Sistema operacional: Linux, macOS ou Windows
 
-## 🚀 Instalação Passo a Passo
+## 🚀 Instalação Simplificada
 
-### 1. Verificar Python
-```bash
-python3 --version
-# Deve mostrar Python 3.7 ou superior
-```
-
-### 2. Clonar/Baixar o Projeto
+### 1. Clonar/Baixar o Projeto
 ```bash
 # Se usando git:
 git clone <url-do-repositorio>
 cd TalentScan
-
-# Ou baixe e extraia os arquivos
 ```
 
-### 3. Criar Ambiente Virtual
+### 2. Executar (Windows)
+Dê um duplo clique no arquivo `run_windows.bat` ou execute no terminal:
+```cmd
+run_windows.bat
+```
+
+### 3. Executar (Linux/macOS)
+```bash
+# Dar permissão de execução (primeira vez)
+chmod +x run_linux.sh
+
+# Executar
+./run_linux.sh
+```
+
+O script irá automaticamente:
+1. Verificar o Python
+2. Criar o ambiente virtual
+3. Instalar as dependências
+4. Executar a aplicação
+
+### 4. Configurar API OpenAI
+Na primeira execução, o script criará o arquivo `.env`. Edite-o para adicionar sua chave:
+```bash
+OPENAI_API_KEY=sua_chave_api_aqui
+```
+
+## 🔧 Instalação Manual (Alternativa)
+
+Se preferir fazer manualmente:
+
+### 1. Criar Ambiente Virtual
 ```bash
 python3 -m venv venv
 ```
 
-### 4. Ativar Ambiente Virtual
+### 2. Ativar Ambiente Virtual
 ```bash
 # Linux/macOS:
 source venv/bin/activate
@@ -37,65 +60,13 @@ source venv/bin/activate
 venv\Scripts\activate
 ```
 
-### 5. Instalar Dependências
+### 3. Instalar Dependências
 ```bash
 pip install -r requirements.txt
 ```
 
-### 6. Configurar API OpenAI
+### 4. Executar
 ```bash
-# Copiar arquivo de exemplo
-cp config.env.example .env
-
-# Editar arquivo .env
-nano .env  # ou use seu editor preferido
-```
-
-Adicione sua chave da API:
-```
-OPENAI_API_KEY=sua_chave_api_aqui
-```
-
-### 7. Testar Instalação
-```bash
-python test_talentscan.py
-```
-
-Se todos os testes passarem, a instalação foi bem-sucedida!
-
-## 🔧 Configuração Rápida
-
-### Script de Ativação
-```bash
-# Tornar executável (apenas uma vez)
-chmod +x activate_env.sh
-
-# Ativar ambiente
-source activate_env.sh
-```
-
-### Configuração Automática
-```bash
-python setup.py
-```
-
-## 📁 Estrutura Após Instalação
-
-```
-TalentScan/
-├── venv/                 # Ambiente virtual
-├── .env                  # Configurações (criar)
-├── curriculos_exemplo/   # Diretório para testes
-├── talent_scan.py        # Aplicação principal
-├── requirements.txt      # Dependências
-└── ... (outros arquivos)
-```
-
-## 🧪 Verificação da Instalação
-
-### Teste Básico
-```bash
-source venv/bin/activate
 python talent_scan.py --help
 ```
 

@@ -49,3 +49,6 @@ Thumbs.db
 # Arquivos de backup
 *.bak
 *.backup
+
+# Instaladores
+get-pip.py

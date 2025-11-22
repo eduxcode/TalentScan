@@ -42,6 +42,8 @@ class Config:
         
         if not cls.OPENAI_API_KEY:
             errors.append("OPENAI_API_KEY não configurada")
+        elif not cls.OPENAI_API_KEY.startswith("sk-"):
+            errors.append("OPENAI_API_KEY parece inválida (deve começar com 'sk-')")
         
         if cls.OPENAI_MAX_TOKENS < 100:
             errors.append("OPENAI_MAX_TOKENS deve ser pelo menos 100")

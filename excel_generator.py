@@ -59,6 +59,31 @@ class ExcelGenerator:
         
         return output_file
     
+    def export_to_csv(self, candidates_data: List[Dict[str, Any]], job_profile: Dict[str, List[str]], output_file: str = None) -> str:
+        """
+        Exporta dados para CSV
+        
+        Args:
+            candidates_data: Lista com dados dos candidatos
+            job_profile: Perfil da vaga
+            output_file: Nome do arquivo de saída (opcional)
+            
+        Returns:
+            Caminho do arquivo gerado
+        """
+        if not output_file:
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            output_file = f"analise_curriculos_{timestamp}.csv"
+        
+        # Criar DataFrame
+        df = self._create_dataframe(candidates_data, job_profile)
+        
+        # Exportar para CSV
+        df.to_csv(output_file, index=False, encoding='utf-8-sig', sep=';')
+        logger.info(f"Relatório CSV salvo em: {output_file}")
+        
+        return output_file
+    
     def _create_dataframe(self, candidates_data: List[Dict[str, Any]], job_profile: Dict[str, List[str]]) -> pd.DataFrame:
         """
         Cria DataFrame com dados dos candidatos

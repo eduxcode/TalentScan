@@ -5,7 +5,7 @@ import os
 import json
 import re
 from typing import Dict, List, Any
-from openai import OpenAI
+from openai import OpenAI, RateLimitError, APIError
 import logging
 from dotenv import load_dotenv
 
@@ -85,6 +85,15 @@ class OpenAIAnalyzer:
             Dicionário com análise e pontuação
         """
         try:
+            # Sanitize input to prevent prompt injection and limit length
+            # Remove potential prompt injection markers
+            safe_cv_text = cv_text.replace("```", "").replace("System:", "").replace("User:", "")
+            
+            # Limit length strictly
+            max_length = 3000
+            if len(safe_cv_text) > max_length:
+                safe_cv_text = safe_cv_text[:max_length] + "... (truncated)"
+
             # Preparar prompt para análise
             required_attrs = '\n'.join([f"- {attr}" for attr in job_profile['requeridos']])
             desired_attrs = '\n'.join([f"- {attr}" for attr in job_profile['desejaveis']])
@@ -101,7 +110,7 @@ ATRIBUTOS DESEJÁVEIS:
 {desired_attrs}
 
 CURRÍCULO PARA ANÁLISE:
-{cv_text[:3000]}  # Limitar tamanho do texto
+{safe_cv_text}
 
 INSTRUÇÕES:
 1. Para cada atributo requerido e desejável, atribua uma nota de 1 a 5
@@ -145,11 +154,23 @@ Responda APENAS com o JSON, sem texto adicional.
                 
             except json.JSONDecodeError as e:
                 logger.error(f"Erro ao decodificar JSON da resposta: {e}")
-                logger.error(f"Resposta recebida: {response_text}")
+                # Avoid logging full response text if it might contain PII reflected from input
+                logger.debug(f"Resposta recebida (truncada): {response_text[:100]}...")
                 
                 # Fallback: tentar extrair informações manualmente
                 return self._extract_analysis_fallback(response_text, job_profile)
                 
+        except RateLimitError as e:
+            logger.error(f"Erro de Cota/Limite na API OpenAI: {e}")
+            print("\n⚠️  ERRO CRÍTICO: Cota da API OpenAI excedida ou limite atingido.")
+            print("   Por favor, verifique seu plano e detalhes de cobrança em: https://platform.openai.com/account/billing")
+            print("   A análise continuará com valores padrão para não interromper o fluxo, mas os resultados não serão precisos.\n")
+            return self._create_default_analysis(job_profile)
+            
+        except APIError as e:
+            logger.error(f"Erro na API OpenAI: {e}")
+            return self._create_default_analysis(job_profile)
+
         except Exception as e:
             logger.error(f"Erro na análise do currículo: {str(e)}")
             return self._create_default_analysis(job_profile)

@@ -16,8 +16,26 @@ class DocumentReader:
     """Classe para leitura de documentos PDF e DOCX"""
     
     def __init__(self):
-        self.supported_extensions = ['.pdf', '.docx']
+        self.supported_extensions = ['.pdf', '.docx', '.txt']
     
+    def sanitize_text(self, text: str) -> str:
+        """
+        Remove caracteres de controle e normaliza o texto
+        
+        Args:
+            text: Texto original
+            
+        Returns:
+            Texto sanitizado
+        """
+        if not text:
+            return ""
+        
+        # Remover caracteres nulos e outros controles não imprimíveis (exceto \n, \r, \t)
+        # Mantém caracteres acentuados e pontuação
+        text = "".join(char for char in text if char.isprintable() or char in ['\n', '\r', '\t'])
+        return text.strip()
+
     def read_pdf(self, file_path: str) -> str:
         """
         Lê o conteúdo de um arquivo PDF
@@ -29,15 +47,31 @@ class DocumentReader:
             Texto extraído do PDF
         """
         try:
+            # Verificar se arquivo está vazio
+            if os.path.getsize(file_path) == 0:
+                logger.warning(f"Arquivo vazio: {file_path}")
+                return ""
+
             with open(file_path, 'rb') as file:
                 pdf_reader = PyPDF2.PdfReader(file)
+                
+                # Verificar se PDF é válido/encriptado
+                if pdf_reader.is_encrypted:
+                    logger.warning(f"PDF encriptado (não suportado): {file_path}")
+                    return ""
+                    
                 text = ""
-                
                 for page_num in range(len(pdf_reader.pages)):
-                    page = pdf_reader.pages[page_num]
-                    text += page.extract_text() + "\n"
+                    try:
+                        page = pdf_reader.pages[page_num]
+                        page_text = page.extract_text()
+                        if page_text:
+                            text += page_text + "\n"
+                    except Exception as e:
+                        logger.warning(f"Erro ao ler página {page_num} de {file_path}: {e}")
+                        continue
                 
-                return text.strip()
+                return self.sanitize_text(text)
         except Exception as e:
             logger.error(f"Erro ao ler PDF {file_path}: {str(e)}")
             return ""
@@ -53,17 +87,46 @@ class DocumentReader:
             Texto extraído do DOCX
         """
         try:
+            # Verificar se arquivo está vazio
+            if os.path.getsize(file_path) == 0:
+                logger.warning(f"Arquivo vazio: {file_path}")
+                return ""
+
             doc = Document(file_path)
             text = ""
             
             for paragraph in doc.paragraphs:
                 text += paragraph.text + "\n"
             
-            return text.strip()
+            return self.sanitize_text(text)
         except Exception as e:
             logger.error(f"Erro ao ler DOCX {file_path}: {str(e)}")
             return ""
     
+    def read_txt(self, file_path: str) -> str:
+        """
+        Lê o conteúdo de um arquivo TXT
+        
+        Args:
+            file_path: Caminho para o arquivo TXT
+            
+        Returns:
+            Texto extraído do TXT
+        """
+        try:
+            # Verificar se arquivo está vazio
+            if os.path.getsize(file_path) == 0:
+                logger.warning(f"Arquivo vazio: {file_path}")
+                return ""
+
+            with open(file_path, 'r', encoding='utf-8', errors='ignore') as f:
+                text = f.read()
+            
+            return self.sanitize_text(text)
+        except Exception as e:
+            logger.error(f"Erro ao ler TXT {file_path}: {str(e)}")
+            return ""
+
     def extract_contact_info(self, text: str) -> Dict[str, Optional[str]]:
         """
         Extrai informações de contato do texto do currículo
@@ -79,6 +142,9 @@ class DocumentReader:
             'email': None,
             'telefone': None
         }
+        
+        if not text:
+            return contact_info
         
         # Extrair email
         email_pattern = r'\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Z|a-z]{2,}\b'
@@ -124,9 +190,14 @@ class DocumentReader:
             texto = self.read_pdf(file_path)
         elif file_extension == '.docx':
             texto = self.read_docx(file_path)
+        elif file_extension == '.txt':
+            texto = self.read_txt(file_path)
         else:
             logger.error(f"Formato não suportado: {file_extension}")
             return {'texto': '', 'contato': {}}
+        
+        if not texto:
+            logger.warning(f"Nenhum texto extraído de: {file_path}")
         
         contato = self.extract_contact_info(texto)
         
@@ -149,18 +220,26 @@ class DocumentReader:
         if not os.path.exists(directory_path):
             logger.error(f"Diretório não encontrado: {directory_path}")
             return []
+            
+        if not os.path.isdir(directory_path):
+            logger.error(f"Caminho não é um diretório: {directory_path}")
+            return []
         
         documentos = []
         
-        for filename in os.listdir(directory_path):
-            file_path = os.path.join(directory_path, filename)
-            
-            if os.path.isfile(file_path):
-                file_extension = os.path.splitext(filename)[1].lower()
+        try:
+            for filename in os.listdir(directory_path):
+                file_path = os.path.join(directory_path, filename)
                 
-                if file_extension in self.supported_extensions:
-                    logger.info(f"Processando arquivo: {filename}")
-                    doc_info = self.read_document(file_path)
-                    documentos.append(doc_info)
+                if os.path.isfile(file_path):
+                    file_extension = os.path.splitext(filename)[1].lower()
+                    
+                    if file_extension in self.supported_extensions:
+                        logger.info(f"Processando arquivo: {filename}")
+                        doc_info = self.read_document(file_path)
+                        if doc_info['texto']: # Só adiciona se conseguiu extrair texto
+                            documentos.append(doc_info)
+        except Exception as e:
+            logger.error(f"Erro ao ler diretório {directory_path}: {e}")
         
         return documentos

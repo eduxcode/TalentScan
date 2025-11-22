@@ -2,14 +2,15 @@
 
 ## 🚀 Início Rápido
 
-### 1. Configuração Inicial
+### 1. Configuração e Execução
 ```bash
-# Ativar ambiente virtual
-source activate_env.sh
+# Windows
+run_windows.bat
 
-# Ou manualmente:
-source venv/bin/activate
+# Linux/macOS
+./run_linux.sh
 ```
+O script configura tudo automaticamente na primeira execução.
 
 ### 2. Configurar API OpenAI
 ```bash

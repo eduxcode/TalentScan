@@ -117,21 +117,25 @@ class TalentScan:
         
         return candidates_data
     
-    def generate_report(self, candidates_data: List[Dict[str, Any]], job_profile: Dict[str, List[str]], output_file: str = None) -> str:
+    def generate_report(self, candidates_data: List[Dict[str, Any]], job_profile: Dict[str, List[str]], output_file: str = None, format: str = 'xlsx') -> str:
         """
-        Gera relatório em Excel
+        Gera relatório em Excel ou CSV
         
         Args:
             candidates_data: Dados dos candidatos
             job_profile: Perfil da vaga
             output_file: Nome do arquivo de saída
+            format: Formato do arquivo ('xlsx' ou 'csv')
             
         Returns:
             Caminho do arquivo gerado
         """
-        logger.info("Gerando relatório Excel...")
+        logger.info(f"Gerando relatório {format.upper()}...")
         
-        # Gerar relatório principal
+        if format.lower() == 'csv':
+            return self.excel_generator.export_to_csv(candidates_data, job_profile, output_file)
+        
+        # Gerar relatório principal (Excel)
         excel_file = self.excel_generator.create_analysis_report(
             candidates_data, 
             job_profile, 
@@ -147,7 +151,7 @@ class TalentScan:
         logger.info(f"Relatório gerado com sucesso: {excel_file}")
         return excel_file
     
-    def run(self, cv_directory: str, profile_file: str, output_file: str = None):
+    def run(self, cv_directory: str, profile_file: str, output_file: str = None, format: str = 'xlsx'):
         """
         Executa o processo completo de análise
         
@@ -155,20 +159,38 @@ class TalentScan:
             cv_directory: Diretório com currículos
             profile_file: Arquivo com perfil da vaga
             output_file: Arquivo de saída (opcional)
+            format: Formato de saída ('xlsx' ou 'csv')
         """
         logger.info("=== INICIANDO TALENTSCAN ===")
         
-        # Verificar se diretório existe
-        if not os.path.exists(cv_directory):
-            logger.error(f"Diretório não encontrado: {cv_directory}")
-            sys.exit(1)
-        
-        # Verificar se arquivo de perfil existe
-        if not os.path.exists(profile_file):
-            logger.error(f"Arquivo de perfil não encontrado: {profile_file}")
-            sys.exit(1)
-        
         try:
+            # Validar inputs
+            if not cv_directory or not isinstance(cv_directory, str):
+                logger.error("Diretório de currículos inválido")
+                sys.exit(1)
+                
+            if not profile_file or not isinstance(profile_file, str):
+                logger.error("Arquivo de perfil inválido")
+                sys.exit(1)
+
+            # Verificar se diretório existe
+            if not os.path.exists(cv_directory):
+                logger.error(f"Diretório não encontrado: {cv_directory}")
+                sys.exit(1)
+            
+            if not os.path.isdir(cv_directory):
+                logger.error(f"O caminho especificado não é um diretório: {cv_directory}")
+                sys.exit(1)
+            
+            # Verificar se arquivo de perfil existe
+            if not os.path.exists(profile_file):
+                logger.error(f"Arquivo de perfil não encontrado: {profile_file}")
+                sys.exit(1)
+                
+            if not os.path.isfile(profile_file):
+                logger.error(f"O caminho do perfil não é um arquivo: {profile_file}")
+                sys.exit(1)
+            
             # Carregar perfil da vaga
             job_profile = self.load_job_profile(profile_file)
             
@@ -180,68 +202,86 @@ class TalentScan:
                 return
             
             # Gerar relatório
-            excel_file = self.generate_report(candidates_data, job_profile, output_file)
+            excel_file = self.generate_report(candidates_data, job_profile, output_file, format)
             
             # Estatísticas finais
             total_candidates = len(candidates_data)
-            avg_score = sum(c.get('pontuacao_total', 0) for c in candidates_data) / total_candidates
-            best_candidate = max(candidates_data, key=lambda x: x.get('pontuacao_total', 0))
+            if total_candidates > 0:
+                avg_score = sum(c.get('pontuacao_total', 0) for c in candidates_data) / total_candidates
+                best_candidate = max(candidates_data, key=lambda x: x.get('pontuacao_total', 0))
+                
+                logger.info("=== ANÁLISE CONCLUÍDA ===")
+                logger.info(f"Total de candidatos processados: {total_candidates}")
+                logger.info(f"Pontuação média: {avg_score:.2f}")
+                logger.info(f"Melhor candidato: {best_candidate.get('contato', {}).get('nome', 'N/A')} - {best_candidate.get('pontuacao_total', 0)} pontos")
+                logger.info(f"Relatório salvo em: {excel_file}")
+            else:
+                logger.warning("Análise concluída, mas sem dados para estatísticas.")
             
-            logger.info("=== ANÁLISE CONCLUÍDA ===")
-            logger.info(f"Total de candidatos processados: {total_candidates}")
-            logger.info(f"Pontuação média: {avg_score:.2f}")
-            logger.info(f"Melhor candidato: {best_candidate.get('contato', {}).get('nome', 'N/A')} - {best_candidate.get('pontuacao_total', 0)} pontos")
-            logger.info(f"Relatório salvo em: {excel_file}")
-            
+        except KeyboardInterrupt:
+            logger.info("\nOperação interrompida pelo usuário")
+            sys.exit(0)
         except Exception as e:
-            logger.error(f"Erro durante a execução: {e}")
+            logger.critical(f"Erro crítico durante a execução: {e}", exc_info=True)
             sys.exit(1)
 
 def main():
     """Função principal"""
-    parser = argparse.ArgumentParser(
-        description="TalentScan - Sistema de Análise de Currículos",
-        formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog="""
+    try:
+        parser = argparse.ArgumentParser(
+            description="TalentScan - Sistema de Análise de Currículos",
+            formatter_class=argparse.RawDescriptionHelpFormatter,
+            epilog="""
 Exemplos de uso:
   python talent_scan.py -c curriculos/ -p perfil_vaga.txt
   python talent_scan.py -c curriculos/ -p perfil_vaga.txt -o relatorio.xlsx
   python talent_scan.py --help
-        """
-    )
-    
-    parser.add_argument(
-        '-c', '--curriculos',
-        required=True,
-        help='Diretório contendo os currículos (PDF e DOCX)'
-    )
-    
-    parser.add_argument(
-        '-p', '--perfil',
-        required=True,
-        help='Arquivo de texto com o perfil da vaga'
-    )
-    
-    parser.add_argument(
-        '-o', '--output',
-        help='Nome do arquivo Excel de saída (opcional)'
-    )
-    
-    parser.add_argument(
-        '--verbose',
-        action='store_true',
-        help='Modo verboso (mais detalhes no log)'
-    )
-    
-    args = parser.parse_args()
-    
-    # Configurar nível de log
-    if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
-    
-    # Criar e executar aplicação
-    app = TalentScan()
-    app.run(args.curriculos, args.perfil, args.output)
+            """
+        )
+        
+        parser.add_argument(
+            '-c', '--curriculos',
+            required=True,
+            help='Diretório contendo os currículos (PDF e DOCX)'
+        )
+        
+        parser.add_argument(
+            '-p', '--perfil',
+            required=True,
+            help='Arquivo de texto com o perfil da vaga'
+        )
+        
+        parser.add_argument(
+            '-o', '--output',
+            help='Nome do arquivo Excel de saída (opcional)'
+        )
+        
+        parser.add_argument(
+            '-f', '--format',
+            choices=['xlsx', 'csv'],
+            default='xlsx',
+            help='Formato do arquivo de saída (padrão: xlsx)'
+        )
+        
+        parser.add_argument(
+            '--verbose',
+            action='store_true',
+            help='Modo verboso (mais detalhes no log)'
+        )
+        
+        args = parser.parse_args()
+        
+        # Configurar nível de log
+        if args.verbose:
+            logging.getLogger().setLevel(logging.DEBUG)
+        
+        # Criar e executar aplicação
+        app = TalentScan()
+        app.run(args.curriculos, args.perfil, args.output, args.format)
+        
+    except Exception as e:
+        print(f"Erro fatal: {e}")
+        sys.exit(1)
 
 if __name__ == "__main__":
     main()
