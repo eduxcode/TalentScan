@@ -40,6 +40,48 @@ __pycache__/
 .DS_Store
 Thumbs.db
 
+# Arquivos de configuração sensíveis
+.env
+*.env
+config.env
+
+# Arquivos de perfil de vaga (podem conter informações sensíveis)
+perfil_vaga.txt
+perfil_vaga_*.txt
+
+# Pasta com currículos (dados pessoais)
+curriculos_exemplo/
+curriculos/
+curriculos_*/
+
+# Arquivos de relatórios gerados
+*.xlsx
+*.xls
+relatorios/
+analise_*.xlsx
+
+# Logs
+*.log
+talent_scan.log
+
+# Ambiente virtual Python
+venv/
+env/
+.venv/
+.env/
+
+# Cache Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Arquivos temporários
+*.tmp
+*.temp
+.DS_Store
+Thumbs.db
+
 # Arquivos de IDE
 .vscode/
 .idea/
@@ -49,3 +91,15 @@ Thumbs.db
 # Arquivos de backup
 *.bak
 *.backup
+
+# Django
+*.log
+*.pot
+*.pyc
+__pycache__/
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+media/
+uploads/
+staticfiles/

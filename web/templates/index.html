@@ -1,0 +1,166 @@
+{% extends "base.html" %}
+
+{% block content %}
+</div>
+
+<div class="form-group">
+    <label>Currículos (PDF, DOCX, TXT)</label>
+    <div class="drop-zone" id="dropZone">
+        <span class="drop-zone__prompt">Arraste os arquivos aqui ou clique para selecionar</span>
+        <input type="file" name="cv_files" class="drop-zone__input" multiple required accept=".pdf,.docx,.txt">
+    </div>
+    <div id="fileList" class="file-list"></div>
+</div>
+
+<div class="form-actions">
+    <button type="submit" class="btn btn-primary btn-lg">Iniciar Análise</button>
+</div>
+</form>
+</div>
+</div>
+
+<script>
+    document.querySelectorAll(".drop-zone__input").forEach((inputElement) => {
+        const dropZoneElement = inputElement.closest(".drop-zone");
+
+        dropZoneElement.addEventListener("click", (e) => {
+            inputElement.click();
+        });
+
+        inputElement.addEventListener("change", (e) => {
+            if (inputElement.files.length) {
+                updateThumbnail(dropZoneElement, inputElement.files);
+            }
+        });
+
+        dropZoneElement.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            dropZoneElement.classList.add("drop-zone--over");
+        });
+
+        ["dragleave", "dragend"].forEach((type) => {
+            dropZoneElement.addEventListener(type, (e) => {
+                dropZoneElement.classList.remove("drop-zone--over");
+            });
+        });
+
+        dropZoneElement.addEventListener("drop", (e) => {
+            e.preventDefault();
+
+            if (e.dataTransfer.files.length) {
+                inputElement.files = e.dataTransfer.files;
+                updateThumbnail(dropZoneElement, e.dataTransfer.files);
+            }
+
+            dropZoneElement.classList.remove("drop-zone--over");
+        });
+    });
+
+    function updateThumbnail(dropZoneElement, files) {
+        let promptElement = dropZoneElement.querySelector(".drop-zone__prompt");
+        if (promptElement) {
+            if (files.length > 0) {
+                promptElement.textContent = `${files.length} arquivo(s) selecionado(s)`;
+            } else {
+                promptElement.textContent = "Arraste os arquivos aqui ou clique para selecionar";
+            }
+        }
+
+        // List files
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = '';
+        Array.from(files).forEach(file => {
+            const div = document.createElement('div');
+            div.className = 'file-item';
+            div.textContent = file.name;
+            fileList.appendChild(div);
+        });
+    }
+</script>
+
+<style>
+    .hero-section {
+        text-align: center;
+        margin-bottom: 3rem;
+    }
+
+    .hero-section h2 {
+        font-size: 2.5rem;
+        margin-bottom: 1rem;
+        color: var(--text-main);
+    }
+
+    .upload-card {
+        max-width: 800px;
+        margin: 0 auto;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+
+    textarea {
+        width: 100%;
+        padding: 1rem;
+        border: 1px solid var(--border-color);
+        border-radius: var(--radius);
+        font-family: inherit;
+        resize: vertical;
+    }
+
+    .drop-zone {
+        max-width: 100%;
+        height: 200px;
+        padding: 25px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        font-family: "Quicksand", sans-serif;
+        font-weight: 500;
+        font-size: 20px;
+        cursor: pointer;
+        color: #cccccc;
+        border: 2px dashed var(--primary-color);
+        border-radius: 10px;
+        background-color: #f8faff;
+        transition: all 0.2s;
+    }
+
+    .drop-zone--over {
+        border-style: solid;
+        background-color: #eef2ff;
+    }
+
+    .drop-zone__input {
+        display: none;
+    }
+
+    .file-list {
+        margin-top: 1rem;
+        font-size: 0.9rem;
+        color: var(--text-muted);
+    }
+
+    .file-item {
+        padding: 0.25rem 0;
+        border-bottom: 1px solid #eee;
+    }
+
+    .form-actions {
+        text-align: center;
+        margin-top: 2rem;
+    }
+
+    .btn-lg {
+        padding: 1rem 3rem;
+        font-size: 1.1rem;
+    }
+</style>
+{% endblock %}

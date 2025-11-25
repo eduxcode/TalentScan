@@ -1,0 +1,32 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+    <div class="bg-white shadow sm:rounded-lg">
+        <div class="px-4 py-5 sm:p-6">
+            <h3 class="text-lg leading-6 font-medium text-gray-900">
+                Excluir Vaga
+            </h3>
+            <div class="mt-2 max-w-xl text-sm text-gray-500">
+                <p>
+                    Tem certeza que deseja excluir a vaga <strong>{{ object.title }}</strong>?
+                    Esta ação não pode ser desfeita e todos os candidatos associados serão removidos.
+                </p>
+            </div>
+            <div class="mt-5 sm:flex sm:items-center">
+                <form method="post">
+                    {% csrf_token %}
+                    <button type="submit"
+                        class="inline-flex items-center justify-center px-4 py-2 border border-transparent font-medium rounded-md text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 sm:text-sm">
+                        Confirmar Exclusão
+                    </button>
+                    <a href="{% url 'job_detail' object.id %}"
+                        class="ml-3 inline-flex items-center justify-center px-4 py-2 border border-gray-300 shadow-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 sm:text-sm">
+                        Cancelar
+                    </a>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

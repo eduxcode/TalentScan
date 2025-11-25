@@ -16,7 +16,7 @@ class DocumentReader:
     """Classe para leitura de documentos PDF e DOCX"""
     
     def __init__(self):
-        self.supported_extensions = ['.pdf', '.docx']
+        self.supported_extensions = ['.pdf', '.docx', '.txt']
     
     def read_pdf(self, file_path: str) -> str:
         """
@@ -62,6 +62,31 @@ class DocumentReader:
             return text.strip()
         except Exception as e:
             logger.error(f"Erro ao ler DOCX {file_path}: {str(e)}")
+            return ""
+
+    def read_txt(self, file_path: str) -> str:
+        """
+        Lê o conteúdo de um arquivo TXT
+        
+        Args:
+            file_path: Caminho para o arquivo TXT
+            
+        Returns:
+            Texto extraído do TXT
+        """
+        try:
+            with open(file_path, 'r', encoding='utf-8') as f:
+                return f.read().strip()
+        except UnicodeDecodeError:
+            try:
+                # Tentar com latin-1 se utf-8 falhar
+                with open(file_path, 'r', encoding='latin-1') as f:
+                    return f.read().strip()
+            except Exception as e:
+                logger.error(f"Erro ao ler TXT {file_path}: {str(e)}")
+                return ""
+        except Exception as e:
+            logger.error(f"Erro ao ler TXT {file_path}: {str(e)}")
             return ""
     
     def extract_contact_info(self, text: str) -> Dict[str, Optional[str]]:
@@ -124,6 +149,8 @@ class DocumentReader:
             texto = self.read_pdf(file_path)
         elif file_extension == '.docx':
             texto = self.read_docx(file_path)
+        elif file_extension == '.txt':
+            texto = self.read_txt(file_path)
         else:
             logger.error(f"Formato não suportado: {file_extension}")
             return {'texto': '', 'contato': {}}

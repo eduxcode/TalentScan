@@ -1,0 +1,62 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<div class="px-4 py-6 sm:px-0">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-900">Vagas Recentes</h1>
+        <a href="{% url 'job_create' %}"
+            class="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+            Criar Nova Vaga
+        </a>
+    </div>
+
+    <div class="bg-white shadow overflow-hidden sm:rounded-md">
+        <ul class="divide-y divide-gray-200">
+            {% for job in jobs %}
+            <li>
+                <div class="block hover:bg-gray-50">
+                    <div class="px-4 py-4 sm:px-6">
+                        <div class="flex items-center justify-between">
+                            <a href="{% url 'job_detail' job.id %}"
+                                class="text-sm font-medium text-indigo-600 truncate hover:underline">{{ job.title }}</a>
+                            <div class="ml-2 flex-shrink-0 flex items-center space-x-4">
+                                <a href="{% url 'job_toggle_status' job.id %}"
+                                    class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full cursor-pointer hover:opacity-80 transition-opacity {% if job.active %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}"
+                                    title="Clique para alterar status">
+                                    {{ job.active|yesno:"Ativa,Inativa" }}
+                                </a>
+                                <a href="{% url 'job_delete' job.id %}" class="text-red-600 hover:text-red-900"
+                                    title="Excluir Vaga">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20"
+                                        fill="currentColor">
+                                        <path fill-rule="evenodd"
+                                            d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z"
+                                            clip-rule="evenodd" />
+                                    </svg>
+                                </a>
+                            </div>
+                        </div>
+                        <a href="{% url 'job_detail' job.id %}" class="block mt-2 sm:flex sm:justify-between">
+                            <div class="sm:flex">
+                                <p class="flex items-center text-sm text-gray-500">
+                                    {{ job.candidates.count }} candidatos
+                                </p>
+                            </div>
+                            <div class="mt-2 flex items-center text-sm text-gray-500 sm:mt-0">
+                                <p>
+                                    Criado em {{ job.created_at|date:"d/m/Y" }}
+                                </p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </li>
+            {% empty %}
+            <li class="px-4 py-4 sm:px-6 text-center text-gray-500">
+                Nenhuma vaga cadastrada.
+            </li>
+            {% endfor %}
+        </ul>
+    </div>
+</div>
+{% endblock %}
